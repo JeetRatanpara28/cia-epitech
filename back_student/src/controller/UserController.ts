@@ -11,7 +11,7 @@ class UserController {
   };
 
   public static getOneById = async (req: Request, res: Response) => {
-    const id: number = parseInt(req.params.id, 10);
+    const id: number = parseInt(String(req.params.id), 10);
     const userRepository = AppDataSource.getRepository(User);
     try {
       const user = await userRepository.findOneOrFail({
@@ -55,7 +55,7 @@ class UserController {
   };
 
   public static editUser = async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     const {username, role} = req.body;
 
     const userRepository = AppDataSource.getRepository(User);
@@ -85,7 +85,7 @@ class UserController {
   };
 
   public static deleteUser = async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     const callerId: number = res.locals.jwtPayload.userId;
     if (id === callerId) {
       res.status(400).send({ error: 'cannot delete your own account' });

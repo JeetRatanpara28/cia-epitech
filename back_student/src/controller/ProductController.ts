@@ -11,7 +11,7 @@ class ProductController {
   };
 
   public static getOneById = async (req: Request, res: Response) => {
-    const id: number = parseInt(req.params.id, 10);
+    const id: number = parseInt(String(req.params.id), 10);
     const productRepository = AppDataSource.getRepository(Product);
     try {
       const product = await productRepository.findOneOrFail({where: {id}});
@@ -47,7 +47,7 @@ class ProductController {
   };
 
   public static edit = async (req: Request, res: Response) => {
-    const id: number = parseInt(req.params.id, 10);
+    const id: number = parseInt(String(req.params.id), 10);
     const productRepository = AppDataSource.getRepository(Product);
     let product: Product;
     try {
@@ -76,7 +76,7 @@ class ProductController {
   };
 
   public static remove = async (req: Request, res: Response) => {
-    const id: number = parseInt(req.params.id, 10);
+    const id: number = parseInt(String(req.params.id), 10);
     const productRepository = AppDataSource.getRepository(Product);
     try {
       await productRepository.findOneOrFail({where: {id}});
