@@ -28,9 +28,7 @@ router.post('/',
   [...admin, needFields(['username', 'password', 'role'])],
   UserController.newUser);
 
-router.patch('/:id([0-9]+)',
-  [...admin, needFields(['username', 'role'])],
-  UserController.editUser);
+router.patch('/:id([0-9]+)', admin, UserController.editUser);
 
 router.delete('/:id([0-9]+)', admin, UserController.deleteUser);
 

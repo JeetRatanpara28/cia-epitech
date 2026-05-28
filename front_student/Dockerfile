@@ -8,5 +8,10 @@ COPY . .
 RUN yarn build
 
 FROM nginx:1.27-alpine-slim
+RUN addgroup -S service-web && adduser -S service-web -G service-web
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY --from=builder /app/build /usr/share/nginx/html
-EXPOSE 80
+RUN chown -R service-web:service-web /usr/share/nginx/html \
+ && chown -R service-web:service-web /var/cache/nginx
+USER service-web
+EXPOSE 8080

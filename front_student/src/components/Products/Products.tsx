@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateCurrentPath } from "../../store/actions/root.actions";
 import { IProductState, IStateType, IRootPageStateType } from "../../store/models/root.interface";
 import Popup from "reactjs-popup";
-import { removeProduct, clearSelectedProduct, setModificationState,
+import { getProducts, removeProduct, clearSelectedProduct, setModificationState,
   changeSelectedProduct } from "../../store/actions/products.action";
 import { addNotification } from "../../store/actions/notifications.action";
 import { ProductModificationStatus, IProduct } from "../../store/models/product.interface";
@@ -24,6 +24,7 @@ const Products: React.FC = () => {
   useEffect(() => {
     dispatch(clearSelectedProduct());
     dispatch(updateCurrentPath("products", "list"));
+    dispatch(getProducts());
   }, [path.area, dispatch]);
 
   function onProductSelect(product: IProduct): void {
@@ -108,5 +109,4 @@ const Products: React.FC = () => {
     </Fragment >
   );
 };
-
 export default Products;

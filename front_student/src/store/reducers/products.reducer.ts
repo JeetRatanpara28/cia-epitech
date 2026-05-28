@@ -1,5 +1,5 @@
 import { IProductState, IActionBase } from "../models/root.interface";
-import { ADD_PRODUCT, CHANGE_PRODUCT_PENDING_EDIT, EDIT_PRODUCT, REMOVE_PRODUCT,
+import { GET_PRODUCTS, ADD_PRODUCT, CHANGE_PRODUCT_PENDING_EDIT, EDIT_PRODUCT, REMOVE_PRODUCT,
     CLEAR_PRODUCT_PENDING_EDIT, SET_MODIFICATION_STATE, CHANGE_PRODUCT_AMOUNT} from "../actions/products.action";
 import { IProduct, ProductModificationStatus } from "../models/product.interface";
 
@@ -32,6 +32,9 @@ const initialState: IProductState = {
 
 function productsReducer(state: IProductState = initialState, action: IActionBase): IProductState {
     switch (action.type) {
+        case GET_PRODUCTS: {
+            return { ...state, products: action.products };
+        }
         case ADD_PRODUCT: {
             let maxId: number = Math.max.apply(Math, state.products.map(function(o) { return o.id; }));
             action.product.id = maxId + 1;

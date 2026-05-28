@@ -87,7 +87,8 @@ AppDataSource.initialize()
     app.use('/swagger-stats', adminOnly, swaggerStats.getMiddleware({uriPath: '/swagger-stats'}));
     app.use('/api-docs', adminOnly, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-    app.use('/auth', loginLimit());
+    app.use('/auth/login', loginLimit());
+    app.use('/auth/register', loginLimit());
     app.use('/', routes);
 
     const port = parseInt(process.env.PORT || '3000', 10);

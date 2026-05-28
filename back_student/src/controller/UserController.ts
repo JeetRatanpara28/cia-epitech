@@ -61,15 +61,15 @@ class UserController {
     const userRepository = AppDataSource.getRepository(User);
     let user;
     try {
-      user = await userRepository.findOneOrFail({ where: { id } });
+      user = await userRepository.findOneOrFail({ where: { id }, select: ['id', 'username', 'role'] });
     } catch (error) {
       res.status(404).send('User not found');
       return;
     }
 
-    user.username = username;
-    user.role = role;
-    const errors = await validate(user);
+    if (username !== undefined) user.username = username;
+    if (role !== undefined) user.role = role;
+    const errors = await validate(user, { skipMissingProperties: true });
     if (errors.length > 0) {
       res.status(400).send(errors);
       return;
@@ -86,9 +86,21 @@ class UserController {
 
   public static deleteUser = async (req: Request, res: Response) => {
     const id = parseInt(req.params.id, 10);
+    const callerId: number = res.locals.jwtPayload.userId;
+    if (id === callerId) {
+      res.status(400).send({ error: 'cannot delete your own account' });
+      return;
+    }
     const userRepository = AppDataSource.getRepository(User);
     try {
-      await userRepository.findOneOrFail({ where: { id } });
+      const target = await userRepository.findOneOrFail({ where: { id }, select: ['id', 'role'] });
+      if (target.role === 'ADMIN') {
+        const adminCount = await userRepository.count({ where: { role: 'ADMIN' } });
+        if (adminCount <= 1) {
+          res.status(400).send({ error: 'cannot delete the last admin' });
+          return;
+        }
+      }
       await userRepository.delete(id);
     } catch (error) {
       res.status(404).send('User not found');

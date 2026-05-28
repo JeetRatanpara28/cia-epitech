@@ -1,5 +1,7 @@
 import 'reflect-metadata';
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { Order } from './entity/Order';
+import { Product } from './entity/Product';
 import { User } from './entity/User';
 
 function env(name: string): string {
@@ -17,7 +19,7 @@ const options: DataSourceOptions = useSqlite
       database: process.env.DB_NAME || 'dev.sqlite',
       synchronize: true,
       logging: false,
-      entities: [User],
+      entities: [User, Product, Order],
       migrations: [],
       subscribers: [],
     }
@@ -31,7 +33,7 @@ const options: DataSourceOptions = useSqlite
       synchronize: dev,
       migrationsRun: dev,
       logging: false,
-      entities: [User],
+      entities: [User, Product, Order],
       migrations: ['src/migration/**/*.ts'],
       subscribers: [],
     };

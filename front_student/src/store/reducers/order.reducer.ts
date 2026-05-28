@@ -1,5 +1,5 @@
 import { IOrdersState, IActionBase } from "../models/root.interface";
-import { ADD_ORDER } from "../actions/orders.actions";
+import { GET_ORDERS, ADD_ORDER } from "../actions/orders.actions";
 
 
 const initialState: IOrdersState = {
@@ -29,6 +29,9 @@ const initialState: IOrdersState = {
 
 function orderReducer(state: IOrdersState = initialState, action: IActionBase): IOrdersState {
     switch (action.type) {
+        case GET_ORDERS: {
+            return { ...state, orders: action.orders };
+        }
         case ADD_ORDER: {
             let maxId: number = Math.max.apply(Math, state.orders.map((o) => { return o.id; }));
             if(maxId === -Infinity) { maxId = 0; }
