@@ -1,39 +1,44 @@
 # API_BACK_T_NSA
 
-Steps to run this project:
+REST API used by the front_student app.
 
-## Only when you git clone the project
-1. Run `yarn`
-2. Run `yarn run typeorm migration:create -n CreateAdminUser `
-3. File inside `src/migration` was created 
-4. Replace `up` function by 
+## Setup
+
+1. Copy `.env.example` to `.env` and fill in real values:
+   ```
+   cp .env.example .env
+   ```
+   At minimum, set `JWT_SECRET` (32+ chars), `DB_USER`, `DB_PASS`.
+   Generate a strong JWT secret with: `openssl rand -base64 48`.
+
+2. Build and run with docker-compose:
+   ```
+   docker-compose build
+   docker-compose up -d
+   ```
+
+3. The API listens on `localhost:3000`.
+
+## First admin user
+
+The bundled migration that auto-created an `admin:admin` account has been
+removed. After the first deploy, register the first admin manually:
+
 ```
-  public async up(queryRunner: QueryRunner): Promise<any> {
-    const user = new User();
-    user.username = 'admin';
-    user.password = 'admin';
-    user.hashPassword();
-    user.role = 'ADMIN';
-    const userRepository = getRepository(User);
-    await userRepository.save(user);
-  }
-```
-5. Add inside the same file 
-```
-import {getRepository, MigrationInterface, QueryRunner} from "typeorm";
-import {User} from "../entity/User";
+docker exec -it dev_db mysql -u root -p$DB_PASS dev_db -e \
+  "INSERT INTO user (username, password, role, createdAt, updatedAt) \
+   VALUES ('your-username', '<bcrypt-hash>', 'ADMIN', NOW(), NOW());"
 ```
 
-> [!TIP]
-> Change the password :)
+Generate the bcrypt hash with cost 12 from a Node REPL:
+```
+node -e "console.log(require('bcryptjs').hashSync('your-password', 12))"
+```
 
-## Step for launch the api
+## Notes
 
-1. Run `docker-compose build  && docker-compose up -d` command
-2. Api will be available on  `localhost:3000`
-3. Api logs will be avaible on  `http://localhost:3000/swagger-stats/ui`
-
-
-
-
-
+- `/api-docs` (Swagger UI) and `/swagger-stats/ui` (request stats) are
+  gated by `X-Admin-Token` matching `ADMIN_API_TOKEN`. If that env var is
+  unset, both routes return 404.
+- CORS is whitelisted via `CORS_ORIGINS` (comma-separated).
+- All container processes run as the non-root `service-web` user.

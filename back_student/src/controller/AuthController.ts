@@ -1,127 +1,131 @@
+import {compareSync, hashSync} from 'bcryptjs';
 import {validate} from 'class-validator';
 import {Request, Response} from 'express';
 import * as jwt from 'jsonwebtoken';
-import {getRepository} from 'typeorm';
 import config from '../config/config';
+import {AppDataSource} from '../data-source';
 import {User} from '../entity/User';
+
+// used so unknown usernames still take the bcrypt cost (login timing)
+const dummyHash = hashSync('dummy-not-a-real-password', 12);
+
+function readBody(req: Request): {username?: string; password?: string} {
+  const b = (req.body && typeof req.body === 'object') ? req.body : {};
+  return {username: b.username, password: b.password};
+}
 
 class AuthController {
 
   public static register = async (req: Request, res: Response) => {
-    const {username, password} = req.body;
+    const {username, password} = readBody(req);
+    if (!username || !password) {
+      res.status(400).send({error: 'username and password required'});
+      return;
+    }
+
     const user = new User();
     user.username = username;
     user.password = password;
-    user.role = "NORMAL";
+    user.role = 'NORMAL';
 
-    // Validade if the parameters are ok
     const errors = await validate(user);
     if (errors.length > 0) {
       res.status(400).send(errors);
       return;
     }
 
-    // Hash the password, to securely store on DB
     user.hashPassword();
 
-    // Try to save. If fails, the username is already in use
-    const userRepository = getRepository(User);
+    const repo = AppDataSource.getRepository(User);
     try {
-      await userRepository.save(user);
-    } catch (e) {
-      res.status(409).send('username already in use');
+      await repo.save(user);
+    } catch {
+      res.status(409).send({error: 'registration failed'});
       return;
     }
-
-    // If all ok, send 201 response
-    res.status(201).send('User created');
+    res.status(201).send({status: 'created'});
   };
 
   public static login = async (req: Request, res: Response) => {
-    const {username, password} = req.body;
-    if (!(username && password)) {
-      res.status(400).send('Body was empty');
-    }
-    // Get user from database
-    const userRepository = getRepository(User);
-    let user: User;
-    try {
-      user = await userRepository.findOneOrFail({
-        where: {username},
-      });
-    } catch (error) {
-      res.status(401).send('username or password incorrect');
-      return;
-    }
-    // Check if encrypted password match
-    if (!user.checkIfUnencryptedPasswordIsValid(password)) {
-      res.status(401).send('username or password incorrect');
+    const {username, password} = readBody(req);
+    if (!username || !password) {
+      res.status(400).send({error: 'username and password required'});
       return;
     }
 
-    // Sing JWT, valid for 1 hour
+    const repo = AppDataSource.getRepository(User);
+    let user: User | null = null;
+    try {
+      user = await repo.findOneOrFail({where: {username}});
+    } catch {
+      user = null;
+    }
+
+    // always run a compare so timing is similar in both branches
+    const ok = user
+      ? user.checkIfUnencryptedPasswordIsValid(password)
+      : (compareSync(password, dummyHash) && false);
+
+    if (!user || !ok) {
+      res.status(401).send({error: 'invalid credentials'});
+      return;
+    }
+
     const token = jwt.sign(
       {userId: user.id, username: user.username},
       config.jwtSecret,
-      {expiresIn: '1h'},
+      {expiresIn: '15m', algorithm: 'HS256'},
     );
     res.send({token});
   };
 
   public static getMe = async (req: Request, res: Response) => {
-    // Get user from database
-    const userRepository = getRepository(User);
-    let user: User;
+    const repo = AppDataSource.getRepository(User);
     try {
-      user = await userRepository.findOneOrFail({
+      const user = await repo.findOneOrFail({
         select: ['id', 'username', 'role'],
         where: {id: res.locals.jwtPayload.userId},
       });
       res.send({user});
-    } catch (error) {
-      res.status(404).send('User not found');
-      return;
+    } catch {
+      res.status(404).send({error: 'user not found'});
     }
   };
 
   public static changePassword = async (req: Request, res: Response) => {
-    // Get ID from JWT
     const id = res.locals.jwtPayload.userId;
-
-    // Get parameters from the body
-    const {oldPassword, newPassword} = req.body;
-    if (!(oldPassword && newPassword)) {
-      res.status(400).send();
+    const body = (req.body && typeof req.body === 'object') ? req.body : {};
+    const {oldPassword, newPassword} = body;
+    if (!oldPassword || !newPassword) {
+      res.status(400).send({error: 'oldPassword and newPassword required'});
+      return;
     }
 
-    // Get user from the database
-    const userRepository = getRepository(User);
+    const repo = AppDataSource.getRepository(User);
     let user: User;
     try {
-      user = await userRepository.findOneOrFail(id);
-    } catch (id) {
+      user = await repo.findOneOrFail({ where: { id } });
+    } catch {
       res.status(401).send();
       return;
     }
 
-    // Check if old password matchs
     if (!user.checkIfUnencryptedPasswordIsValid(oldPassword)) {
       res.status(401).send();
       return;
     }
 
-    // Validate de model (password lenght)
     user.password = newPassword;
     const errors = await validate(user);
     if (errors.length > 0) {
       res.status(400).send(errors);
       return;
     }
-    // Hash the new password and save
-    user.hashPassword();
-    await userRepository.save(user);
 
+    user.hashPassword();
+    await repo.save(user);
     res.status(204).send();
   };
 }
+
 export default AuthController;

@@ -2,10 +2,11 @@ version: "3"
 
 services:
   front:
-    build: .
-    ports:
-      - 8080:80
-    environment:
-      REACT_APP_API_URL: "localhost:3000"
-#      PUBLIC_URL: "localhost:8080"
+    build:
+      context: .
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-localhost:3000}
+    container_name: front_front_1
     restart: always
+    ports:
+      - "8080:80"

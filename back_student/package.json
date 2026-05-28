@@ -7,7 +7,7 @@
       "@types/node": "^8.0.29",
       "ts-jest": "^24.1.0",
       "ts-node": "3.3.0",
-      "typescript": "3.3.3333"
+      "typescript": "^5.4.5"
    },
    "dependencies": {
       "@sentry/node": "5.7.1",
@@ -20,8 +20,8 @@
       "@types/swagger-jsdoc": "^3.0.2",
       "bcryptjs": "^2.4.3",
       "body-parser": "^1.19.0",
-      "class-transformer": "^0.2.3",
-      "class-validator": "^0.10.2",
+      "class-transformer": "^0.5.1",
+      "class-validator": "^0.14.1",
       "cors": "^2.8.5",
       "dotenv": "^8.2.0",
       "express": "^4.15.4",
@@ -32,7 +32,7 @@
       "mysql": "^2.17.1",
       "prettier": "^1.18.2",
       "reflect-metadata": "^0.1.10",
-      "sqlite3": "^4.0.3",
+      "sqlite3": "^5.1.7",
       "supertest": "^4.0.2",
       "swagger-jsdoc": "^3.4.0",
       "swagger-stats": "^0.95.11",
@@ -43,11 +43,13 @@
       "tslint-config-prettier": "^1.18.0",
       "tslint-eslint-rules": "^5.4.0",
       "tslint-plugin-prettier": "^2.0.1",
-      "typeorm": "0.2.20"
+      "typeorm": "0.3.20"
    },
    "scripts": {
       "tsc": "tsc",
-      "start": "set debug=* && ts-node-dev --respawn --inspect --transpileOnly ./src/index.ts",
+      "dev": "ts-node-dev --respawn --transpileOnly ./src/index.ts",
+      "dev:inspect": "ts-node-dev --respawn --inspect=127.0.0.1:9229 --transpileOnly ./src/index.ts",
+      "start": "node ./build/index.js",
       "prod": "tsc && node ./build/index.js",
       "schema:drop": "ts-node ./node_modules/typeorm/cli.js schema:drop",
       "schema:sync": "ts-node ./node_modules/typeorm/cli.js schema:sync",

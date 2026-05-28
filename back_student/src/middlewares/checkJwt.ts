@@ -2,34 +2,44 @@ import {NextFunction, Request, Response} from 'express';
 import * as jwt from 'jsonwebtoken';
 import config from '../config/config';
 
+// pull the token out of "Authorization: Bearer xxx"
+function getToken(req: Request): string | null {
+  const h = req.headers.authorization;
+  if (typeof h !== 'string') return null;
+  const [scheme, value] = h.split(' ');
+  if (!scheme || scheme.toLowerCase() !== 'bearer' || !value) return null;
+  return value.trim();
+}
+
+// only re-issue a token when the current one is close to expiring
+const REFRESH_THRESHOLD = 5 * 60; // seconds
+
 export const checkJwt = (req: Request, res: Response, next: NextFunction) => {
-  // Get the jwt token from the head
-
-  if (req.headers.auth === undefined) {
-    res.status(400).send('No token provide');
-  }
-
-  const token = req.headers.auth as string;
-  let jwtPayload;
-
-  // Try to validate the token and get data
-  try {
-    jwtPayload = jwt.verify(token, config.jwtSecret) as any;
-    res.locals.jwtPayload = jwtPayload;
-  } catch (error) {
-    // If token is not valid, respond with 401 (unauthorized)
-    res.status(401).send("You don't have the rights");
+  const token = getToken(req);
+  if (!token) {
+    res.status(401).send({error: 'missing bearer token'});
     return;
   }
 
-  // The token is valid for 1 hour
-  // We want to send a new token on every request
-  const {userId, username, bank} = jwtPayload;
-  const newToken = jwt.sign({userId, username, bank}, config.jwtSecret, {
-    expiresIn: '1h',
-  });
-  res.setHeader('token', newToken);
+  let payload: any;
+  try {
+    payload = jwt.verify(token, config.jwtSecret, {algorithms: ['HS256']});
+  } catch {
+    res.status(401).send({error: 'invalid token'});
+    return;
+  }
 
-  // Call the next middleware or controller
+  res.locals.jwtPayload = payload;
+
+  const now = Math.floor(Date.now() / 1000);
+  if (typeof payload.exp === 'number' && payload.exp - now < REFRESH_THRESHOLD) {
+    const fresh = jwt.sign(
+      {userId: payload.userId, username: payload.username},
+      config.jwtSecret,
+      {expiresIn: '15m', algorithm: 'HS256'},
+    );
+    res.setHeader('X-Refresh-Token', fresh);
+  }
+
   next();
 };

@@ -1,22 +1,37 @@
-import {Router} from 'express';
+import {NextFunction, Request, Response, Router} from 'express';
 import UserController from '../controller/UserController';
 import {checkJwt} from '../middlewares/checkJwt';
 import {checkRole} from '../middlewares/checkRole';
 
+// simple body shape check
+function needFields(fields: string[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const missing = fields.filter(
+      f => typeof body[f] !== 'string' || body[f].length === 0,
+    );
+    if (missing.length > 0) {
+      res.status(400).send({error: 'missing fields', missing});
+      return;
+    }
+    next();
+  };
+}
+
 const router = Router();
+const admin = [checkJwt, checkRole(['ADMIN'])];
 
-// Get all users
-router.get('/', [checkJwt, checkRole(['ADMIN'])], UserController.listAll);
+router.get('/', admin, UserController.listAll);
+router.get('/:id([0-9]+)', admin, UserController.getOneById);
 
-// Get one user
-router.get('/:id([0-9]+)', [checkJwt, checkRole(['ADMIN'])], UserController.getOneById);
+router.post('/',
+  [...admin, needFields(['username', 'password', 'role'])],
+  UserController.newUser);
 
-// Create a new user
-router.post('/', [checkJwt, checkRole(['ADMIN'])], UserController.newUser);
-// Edit one user
-router.patch('/:id([0-9]+)', [checkJwt, checkRole(['ADMIN'])], UserController.editUser);
+router.patch('/:id([0-9]+)',
+  [...admin, needFields(['username', 'role'])],
+  UserController.editUser);
 
-// Delete one user
-router.delete('/:id([0-9]+)', [checkJwt, checkRole(['ADMIN'])], UserController.deleteUser);
+router.delete('/:id([0-9]+)', admin, UserController.deleteUser);
 
 export default router;
