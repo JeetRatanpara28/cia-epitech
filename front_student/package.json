@@ -11,6 +11,7 @@
     "@types/react-redux": "^7.1.4",
     "@types/react-router-dom": "^5.3.3",
     "@types/redux-thunk": "^2.1.0",
+    "ajv": "^8.11.0",
     "axios": "^1.7.9",
     "bootstrap": "^4.3.1",
     "dotenv": "^8.2.0",
@@ -53,5 +54,8 @@
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.11.2"
+  },
+  "overrides": {
+    "ajv": "^8.11.0"
   }
 }
