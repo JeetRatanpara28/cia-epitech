@@ -134,7 +134,20 @@ jobs:
           envs: ECR_REGISTRY,ECR_REPO_BACKEND,ECR_REPO_FRONTEND,IMAGE_TAG,AWS_REGION,JWT_SECRET,ADMIN_API_TOKEN,DB_USER,DB_PASS,DB_NAME,CORS_ORIGINS
           script: |
             set -e
-            cd /home/${{ secrets.EC2_USER }}/app
+            cd /home/ec2-user/app
+
+            cat > .env << ENVEOF
+            ECR_REPO_BACKEND=${ECR_REPO_BACKEND}
+            ECR_REPO_FRONTEND=${ECR_REPO_FRONTEND}
+            IMAGE_TAG=${IMAGE_TAG}
+            JWT_SECRET=${JWT_SECRET}
+            ADMIN_API_TOKEN=${ADMIN_API_TOKEN}
+            DB_USER=${DB_USER}
+            DB_PASS=${DB_PASS}
+            DB_NAME=${DB_NAME}
+            CORS_ORIGINS=${CORS_ORIGINS}
+            ENVEOF
+
             aws ecr get-login-password --region $AWS_REGION \
               | docker login --username AWS --password-stdin $ECR_REGISTRY
             docker-compose -f docker-compose.prod.yml pull
