@@ -68,7 +68,8 @@ export function login(email: string, password: string): any {
             if (err.response === undefined) {
                 return dispatch(addNotification("Error", err.message));
             }
-            return dispatch(addNotification("Error", err.response.data));
+            const msg = err.response.data?.error || err.response.data || 'Login failed';
+            return dispatch(addNotification("Error", msg));
         }
     }
 }

@@ -12,6 +12,7 @@ function env(name: string): string {
 
 const dev = process.env.NODE_ENV !== 'production';
 const useSqlite = process.env.DB_TYPE === 'sqlite';
+const usePostgres = !!process.env.DATABASE_URL;
 
 const options: DataSourceOptions = useSqlite
   ? {
@@ -23,6 +24,18 @@ const options: DataSourceOptions = useSqlite
       migrations: [],
       subscribers: [],
     }
+  : usePostgres
+  ? {
+      type: 'postgres',
+      url: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      synchronize: false,
+      migrationsRun: true,
+      logging: false,
+      entities: [User, Product, Order],
+      migrations: [__dirname + '/migration/*.js'],
+      subscribers: [],
+    }
   : {
       type: 'mysql',
       host: env('DB_HOST'),
@@ -31,10 +44,10 @@ const options: DataSourceOptions = useSqlite
       password: env('DB_PASS'),
       database: env('DB_NAME'),
       synchronize: dev,
-      migrationsRun: dev,
+      migrationsRun: true,
       logging: false,
       entities: [User, Product, Order],
-      migrations: ['src/migration/**/*.ts'],
+      migrations: [__dirname + '/migration/*.js'],
       subscribers: [],
     };
 
