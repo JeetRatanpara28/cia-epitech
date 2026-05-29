@@ -5,7 +5,6 @@ services:
     dockerfilePath: ./back_student/Dockerfile
     dockerContext: ./back_student
     plan: free
-    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
